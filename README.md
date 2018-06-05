@@ -8,7 +8,7 @@ Daze is a tool to help you link to the **Internet**.
 go get -u -v github.com/mohanson/daze/cmd/daze
 
 # server port
-# you need a linux machine that can access the **Internet**, and enter the following command:
+# you need a linux machine that can access the Internet, and enter the following command:
 daze server -l 0.0.0.0:51958
 
 # client port
