@@ -244,7 +244,10 @@ func (l *Locale) ServeProxy(connl io.ReadWriteCloser) error {
 				return nil
 			}
 			r.Write(connr)
-			resp, _ := http.ReadResponse(connrReader, r)
+			resp, err := http.ReadResponse(connrReader, r)
+			if err != nil {
+				return err
+			}
 			return resp.Write(connl)
 		}(); err != nil {
 			break
