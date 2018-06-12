@@ -55,6 +55,16 @@ func Gravity(conn io.ReadWriteCloser, k []byte) io.ReadWriteCloser {
 	}
 }
 
+func Resolve(addr string) {
+	net.DefaultResolver = &net.Resolver{
+		PreferGo: true,
+		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
+			var d net.Dialer
+			return d.DialContext(ctx, "udp", addr)
+		},
+	}
+}
+
 type Dialer interface {
 	Dial(network, address string) (io.ReadWriteCloser, error)
 }
@@ -159,16 +169,6 @@ func DarkMainlandIPNet() *NetBox {
 	return netBox
 }
 
-func SetResolver(addr string) {
-	net.DefaultResolver = &net.Resolver{
-		PreferGo: true,
-		Dial: func(ctx context.Context, network, address string) (net.Conn, error) {
-			var d net.Dialer
-			return d.DialContext(ctx, "udp", addr)
-		},
-	}
-}
-
 type Filter struct {
 	Client Dialer
 	Netbox NetBox
@@ -180,10 +180,7 @@ func (f *Filter) Dial(network, address string) (io.ReadWriteCloser, error) {
 		return nil, err
 	}
 	ips, err := net.LookupIP(host)
-	if err != nil {
-		return nil, err
-	}
-	if f.Netbox.Has(ips[0]) {
+	if err == nil && f.Netbox.Has(ips[0]) {
 		return net.Dial(network, address)
 	}
 	return f.Client.Dial(network, address)
