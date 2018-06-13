@@ -234,16 +234,23 @@ func (l *Locale) ServeProxy(connl io.ReadWriteCloser) error {
 			connrReader := bufio.NewReader(connr)
 
 			if r.Method == "CONNECT" {
-				connl.Write([]byte("HTTP/1.1 200 Connection Established\r\n\r\n"))
+				_, err := connl.Write([]byte("HTTP/1.1 200 Connection Established\r\n\r\n"))
+				if err != nil {
+					return err
+				}
 				Link(connl, connr)
 				return nil
 			}
 			if r.Method == "GET" && r.Header.Get("Upgrade") == "websocket" {
-				r.Write(connr)
+				if err := r.Write(connr); err != nil {
+					return err
+				}
 				Link(connl, connr)
 				return nil
 			}
-			r.Write(connr)
+			if err := r.Write(connr); err != nil {
+				return err
+			}
 			resp, err := http.ReadResponse(connrReader, r)
 			if err != nil {
 				return err
@@ -278,9 +285,15 @@ func (l *Locale) ServeSocks4(connl io.ReadWriteCloser) error {
 	io.ReadFull(connl, buf[:2])
 	dstPort = binary.BigEndian.Uint16(buf[:2])
 	io.ReadFull(connl, buf[:4])
-	reader.ReadBytes(0x00)
+	_, err = reader.ReadBytes(0x00)
+	if err != nil {
+		return err
+	}
 	if bytes.Equal(buf[:3], []byte{0x00, 0x00, 0x00}) && buf[3] != 0x00 {
-		dstHostBytes, _ = reader.ReadBytes(0x00)
+		dstHostBytes, err = reader.ReadBytes(0x00)
+		if err != nil {
+			return err
+		}
 		dstHost = string(dstHostBytes[:len(dstHostBytes)-1])
 	} else {
 		dstHost = net.IP(buf[:4]).String()
@@ -333,7 +346,10 @@ func (l *Locale) ServeSocks5(connl io.ReadWriteCloser) error {
 		io.ReadFull(connl, buf[:16])
 		dstHost = net.IP(buf[:16]).String()
 	}
-	io.ReadFull(connl, buf[:2])
+	_, err = io.ReadFull(connl, buf[:2])
+	if err != nil {
+		return err
+	}
 	dstPort = binary.BigEndian.Uint16(buf[:2])
 	dst = dstHost + ":" + strconv.Itoa(int(dstPort))
 	log.Println("Connect", dst)
@@ -355,8 +371,14 @@ func (l *Locale) ServeSocks5(connl io.ReadWriteCloser) error {
 }
 
 func (l *Locale) Serve(connl io.ReadWriteCloser) error {
-	buf := make([]byte, 1)
-	io.ReadFull(connl, buf)
+	var (
+		buf = make([]byte, 1)
+		err error
+	)
+	_, err = io.ReadFull(connl, buf)
+	if err != nil {
+		return err
+	}
 	connl = ReadWriteCloser{
 		Reader: io.MultiReader(bytes.NewReader(buf), connl),
 		Writer: connl,
