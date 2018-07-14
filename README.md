@@ -13,7 +13,7 @@ daze server -l 0.0.0.0:51958
 
 # client port
 # use the following command to link your server:
-daze client -s $SERVER:51958 -l 127.0.0.1:51959
+daze client -s $SERVER:51958 -l 127.0.0.1:51959 -dns 114.114.114.114:53
 # now, you are free to visit Internet
 daze cmd curl https://google.com
 ```
