@@ -4,6 +4,8 @@ Daze is a tool to help you link to the **Internet**.
 
 # Usage
 
+Daze is dead simple to use:
+
 ```sh
 go get -u -v github.com/mohanson/daze/cmd/daze
 
